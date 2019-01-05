@@ -300,7 +300,6 @@ def load_graphs(graphs_file, mode='train', num_im=-1, num_val_im=0, filter_empty
         elif mode == 'train':
             image_index = image_index[num_val_im:]
 
-
     split_mask = np.zeros_like(data_split).astype(bool)
     split_mask[image_index] = True
 

@@ -6,7 +6,8 @@ from argparse import ArgumentParser
 import numpy as np
 
 ROOT_PATH = os.path.dirname(os.path.realpath(__file__))
-DATA_PATH = os.path.join(ROOT_PATH, 'data')
+# DATA_PATH = os.path.join(ROOT_PATH, 'data')
+DATA_PATH = '/mnt/data1/zdf/project/iccv/2019/neural-motifs/data'
 
 def path(fn):
     return os.path.join(DATA_PATH, fn)
@@ -17,9 +18,9 @@ def stanford_path(fn):
 # =============================================================================
 # Update these with where your data is stored ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-VG_IMAGES = '/home/rowan/datasets2/VG_100K_2/VG_100K'
-RCNN_CHECKPOINT_FN = path('faster_rcnn_500k.h5')
+VG_IMAGES = '/mnt/data1/zdf/data/relation/vg/stanford_filered/VG_100K'
 
+RCNN_CHECKPOINT_FN = path('faster_rcnn_500k.h5')
 IM_DATA_FN = stanford_path('image_data.json')
 VG_SGG_FN = stanford_path('VG-SGG.h5')
 VG_SGG_DICT_FN = stanford_path('VG-SGG-dicts.json')

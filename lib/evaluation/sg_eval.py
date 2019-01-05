@@ -8,6 +8,7 @@ from lib.fpn.box_intersections_cpu.bbox import bbox_overlaps
 from config import MODES
 np.set_printoptions(precision=3)
 
+
 class BasicSceneGraphEvaluator:
     def __init__(self, mode, multiple_preds=False):
         self.result_dict = {}
