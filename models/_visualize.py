@@ -192,6 +192,8 @@ def val_batch(batch_num, b, evaluator, thrs=(20, 50, 100)):
         edges[(head_name, tail_name)] = train.ind_to_predicates[fiveple[4]]
 
     # 5元组：第一个物体在本张图的id，第二个物体在本张图的id，第一个物体的类别，第二个物体的类别，俩个物体的关系类别
+    # gt_classes: 本图的第一个物体对应的类别id， 第二个物体。。。  {本图第i个物体： 类别id}
+    # gt_relations: [物体(本图id), 物体(本图id), 关系id]
     gt_5ples = np.column_stack((gt_entry['gt_relations'][:, :2],
                                 gt_entry['gt_classes'][gt_entry['gt_relations'][:, 0]],
                                 gt_entry['gt_classes'][gt_entry['gt_relations'][:, 1]],
