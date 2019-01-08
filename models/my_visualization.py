@@ -31,8 +31,6 @@ train_loader, val_loader = VGDataLoader.splits(train, val, mode='rel',
                                                num_workers=conf.num_workers,
                                                num_gpus=conf.num_gpus)
 
-WIDTH = 1024
-HEIGHT = 768
 
 ############################################ HELPER FUNCTIONS ###################################
 
@@ -63,7 +61,7 @@ def load_unscaled(fn):
     return image
 
 
-font = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeMonoBold.ttf', 32)
+font = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeMonoBold.ttf', 14)
 
 
 def draw_box(draw, boxx, cls_ind, text_str):
@@ -100,7 +98,7 @@ def mid_of_2point(point1, point2):
     """read two tuple, return a tuple"""
     midx = (point1[0] + point2[0]) / 2
     midy = (point1[1] + point2[1]) / 2
-    return (midx, midy)
+    return midx, midy
 
 
 def draw_relation(draw, box1, box2, cls_ind, text_str):
@@ -164,11 +162,12 @@ def draw_scene_graph(objs, triples, has_relation=None, vocab=None, **kwargs):
         assert torch.is_tensor(objs)
         assert torch.is_tensor(triples)
         objs_list, triples_list = [], []
+
+        # only display obj with rels && indentify instance
         for i in range(objs.size(0)):
             objs_list.append(vocab['object_idx_to_name'][objs[i]])
         for i in range(triples.size(0)):
             s = triples[i, 0]
-            # p = vocab['pred_name_to_idx'][triples[i, 1]]
             p = vocab['pred_idx_to_name'][triples[i, 1]]
             o = triples[i, 2]
             triples_list.append([s, p, o])
@@ -185,10 +184,13 @@ def draw_scene_graph(objs, triples, has_relation=None, vocab=None, **kwargs):
         'node [fillcolor="lightpink1"]',
     ]
     # Output nodes for objects
+    appear_times = {}
     for i, obj in enumerate(objs):
+        # obj only with relation
         if (has_relation is not None and not has_relation.get(i, 0)) or (ignore_dummies and obj == '__image__'):
             continue
-        lines.append('%d [label="%s"]' % (i, obj))
+        appear_times[obj] = appear_times.get(obj, 0) + 1
+        lines.append('%d [label="%s"]' % (i, obj + '_' + str(appear_times[obj])))
 
     # Output relationships
     next_node_id = len(objs)
@@ -260,12 +262,15 @@ def val_batch(batch_num, b, thrs=(20, 50, 100)):
                               cls_ind=gt_entry['gt_relations'][rels_id][2] + len(train.ind_to_classes),
                               text_str=val.ind_to_predicates[gt_entry['gt_relations'][rels_id][2]])
 
-    # Draw the bbox
+    # Draw the bbox with instance
+    appear_times = {}
     for obj_id in range(len(gt_entry['gt_classes'])):
         if has_relation.get(obj_id, 0):
+            cur_time = appear_times.get(gt_entry['gt_classes'][obj_id], 0) + 1
+            appear_times[gt_entry['gt_classes'][obj_id]] = cur_time
             draw2 = draw_box(draw2, gt_entry['gt_boxes'][obj_id],
                              cls_ind=gt_entry['gt_classes'][obj_id],
-                             text_str=val.ind_to_classes[gt_entry['gt_classes'][obj_id]])
+                             text_str=val.ind_to_classes[gt_entry['gt_classes'][obj_id]] + '_' + str(cur_time))
 
     global cnt
     cnt += 1
@@ -282,4 +287,28 @@ def val_batch(batch_num, b, thrs=(20, 50, 100)):
                      output_filename='qualitative/graph/graph_' + str(cnt) + '.png')
 
 
-mAp = val_epoch()
+def concat_pics(path1, path2):
+    images1, images2 = [], []
+    for root, dirs, files in os.walk(path1):
+        for f in files:
+            images1.append(f)
+    for root, dirs, files in os.walk(path2):
+        for f in files:
+            images2.append(f)
+    images1.sort()
+    images2.sort()
+
+    for i in tqdm(range(len(images1))):
+        image1 = Image.open(path1 + '/' + images1[i])
+        image2 = Image.open(path2 + '/' + images2[i])
+
+        target = Image.new(image2.mode, (image1.width + image2.width, max(image1.height, image2.height)), (255, 255, 255))
+        target.paste(image1, (0, 0))
+        target.paste(image2, (image1.width, 0))
+        target.save('qualitative/concat/' + images1[i].split('_')[1].split('.')[0] + '.png')
+
+
+if __name__ == '__main__':
+    # val_epoch()
+    concat_pics('/mnt/data1/jwt/Project/neural-motifs/models/qualitative/imgbox',
+                '/mnt/data1/jwt/Project/neural-motifs/models/qualitative/graph')
